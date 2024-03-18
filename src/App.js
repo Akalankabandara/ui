@@ -1,6 +1,8 @@
 import * as XLSX from "xlsx";
 import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
+import JsonView from './Table'
+import {format} from "date-fns"
 
 export default function App() {
   const [result, setResult] = useState([]);
@@ -19,7 +21,17 @@ export default function App() {
       let workbook = XLSX.read(bstr, { type: "binary" });
       let first_sheet_name = workbook.SheetNames[0];
       let worksheet = workbook.Sheets[first_sheet_name];
-      let arraylist = XLSX.utils.sheet_to_json(worksheet, { raw: true });
+      let arraylist = XLSX.utils.sheet_to_json(worksheet, { raw: true, cellDates: true, dateNF: 'm/d/yyyy' });
+
+      // Format datetime fields to ISO strings
+      arraylist.forEach(item => {
+        for (let key in item) {
+          if (item.hasOwnProperty(key) && item[key] instanceof Date) {
+            item[key] = item[key].toISOString();
+          }
+        }
+      });
+
       setResult(arraylist);
       addData(arraylist); // Call addData here after result is set
       console.log(arraylist);
@@ -43,12 +55,15 @@ export default function App() {
 
   return (
     <>
-      <input
-        type="file"
-        placeholder="Upload file"
-        accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-        onChange={(event) => addFile(event)}
-      />
+      <div>
+        <input
+          type="file"
+          placeholder="Upload file"
+          accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+          onChange={(event) => addFile(event)}
+        />
+        <JsonView />
+      </div>
     </>
   );
 }
